@@ -175,6 +175,31 @@ textarea { resize: vertical; min-height: 84px; }
 .stline.bad .dot { --sc: var(--bad); }
 .stline.wait .dot { --sc: var(--warn); }
 .errtxt { color: var(--bad); margin: 0 0 10px; }
+.hbtns { display: flex; gap: 8px; align-items: center; }
+.iconbtn2 { width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.iconbtn2:hover { border-color: var(--accent); color: var(--accent); }
+.iconbtn2.spin svg { animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.tabadd { display: none; }
+.tab svg { display: none; }
+.btn.on { background: var(--accent-soft); border-color: var(--accent); }
+.genrepanel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: grid; gap: 10px; }
+.genrepanel .chips { flex-wrap: wrap; }
+.gfoot { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.gen { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.setsec { padding: 14px 0; border-top: 1px solid var(--line); display: grid; gap: 10px; justify-items: start; }
+.setsec:first-of-type { border-top: 0; }
+.setsec h3 { font-family: var(--font-display); font-size: 17px; margin: 0; }
+.setsec p { margin: 0; }
+.tagbox { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.tagbox:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gtag { display: inline-flex; align-items: center; gap: 2px; background: var(--accent-soft); padding: 3px 4px 3px 10px; border-radius: 999px; font-size: 13.5px; font-weight: 500; color: var(--fg); }
+.gtag button { border: 0; background: none; color: var(--muted); cursor: pointer; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; padding: 0; }
+.gtag button:hover { color: var(--bad); }
+.tagbox input { border: 0; background: transparent; width: auto; flex: 1 1 110px; min-width: 90px; padding: 5px 4px; }
+.tagbox input:focus-visible { outline: none; }
+.sugg { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip.new { border-style: dashed; border-color: var(--accent); color: var(--accent); }
 .foot { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
 
 /* Fiche série */
@@ -206,12 +231,35 @@ textarea { resize: vertical; min-height: 84px; }
 .toast[hidden] { display: none; }
 .toast button { background: none; border: 0; color: inherit; text-decoration: underline; font-weight: 600; cursor: pointer; padding: 0; }
 
-@media (max-width: 560px) {
-  .sheet { align-items: flex-end; }
-  .panel { height: 92%; border-radius: 16px 16px 0 0; box-shadow: 0 -8px 30px rgb(0 0 0 / .25); }
+@media (max-width: 640px) {
+  body { padding-block: 14px calc(92px + env(safe-area-inset-bottom, 0px)); }
+  h1 { font-size: 28px; }
+  .top { flex-wrap: nowrap; align-items: flex-start; margin-bottom: 14px; gap: 10px; }
+  .top > div:first-child { min-width: 0; flex: 1; }
+  .sub { font-size: 13px; }
+  .desk { display: none !important; }
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: 0; background: var(--surface); border-top: 1px solid var(--line); border-bottom: 0; overflow: visible;
+    padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 2px 8px; font-size: 11px; border-bottom: 0; border-top: 3px solid transparent; margin: 0; }
+  .tab svg { display: block; }
+  .tabadd { display: grid; place-self: center; place-items: center; width: 48px; height: 48px; margin-top: 6px; border-radius: 50%; border: 0; padding: 0; background: var(--accent); color: var(--accent-fg); cursor: pointer; box-shadow: 0 3px 10px rgb(0 0 0 / .25); }
+  .banner { font-size: 13px; }
+  .tab[aria-selected="true"] { border-top-color: var(--accent); color: var(--accent); }
+  input, select, textarea { font-size: 16px; }
+  .btn { min-height: 42px; }
+  .btn.sm { min-height: 36px; padding: 7px 12px; }
+  #q { flex-basis: 100%; }
+  #sort { flex: 1 1 0; }
+  .chips:not(.wrap) { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .chips:not(.wrap)::-webkit-scrollbar { display: none; }
+  .chip { white-space: nowrap; flex: none; padding: 8px 14px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; }
+  .t { font-size: 15px; }
+  .sheet .panel { width: 100%; height: 100%; border-radius: 0; }
+  .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
   .site-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n x" "u u"; }
   .site-row .n { grid-area: n; } .site-row .u { grid-area: u; } .site-row .x { grid-area: x; }
-  .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 18px 12px; }
+  .two { gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -223,38 +271,65 @@ textarea { resize: vertical; min-height: 84px; }
       <h1>Manhwathèque</h1>
       <p class="sub" id="summary">Chargement de ta bibliothèque…</p>
     </div>
-    <button id="btn-add" class="btn primary" type="button" data-act="add" hidden>+ Ajouter une série</button>
+    <div class="hbtns">
+      <button id="btn-refresh" class="iconbtn2" type="button" aria-label="Actualiser" title="Actualiser"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+      <button id="btn-settings" class="iconbtn2" type="button" aria-label="Paramètres" title="Paramètres"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
+      <button id="btn-add" class="btn primary desk" type="button" data-act="add" hidden>+ Ajouter une série</button>
+    </div>
   </header>
 
   <div id="banner" class="banner" hidden></div>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
-    <button class="tab" role="tab" data-tab="library" aria-selected="true" type="button">Bibliothèque</button>
-    <button class="tab" role="tab" data-tab="history" aria-selected="false" type="button">Historique</button>
-    <button class="tab" role="tab" data-tab="sites" aria-selected="false" type="button">Sites</button>
-    <button class="tab" role="tab" data-tab="sync" aria-selected="false" type="button">Synchro</button>
+    <button class="tab" role="tab" data-tab="library" aria-selected="true" type="button"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4v16H5zM11 4h4v16h-4z"/><path d="m17.5 5.5 3.5 1-3.5 13.5-3.5-1z"/></svg><span>Bibliothèque</span></button>
+    <button class="tab" role="tab" data-tab="history" aria-selected="false" type="button"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg><span>Historique</span></button>
+    <button id="tabadd" class="tabadd" type="button" aria-label="Ajouter une série" hidden><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button class="tab" role="tab" data-tab="sites" aria-selected="false" type="button"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/></svg><span>Sites</span></button>
+    <button class="tab" role="tab" data-tab="sync" aria-selected="false" type="button"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5 3.75 3.75 0 0 1 17.5 18z"/></svg><span>Synchro</span></button>
   </nav>
 
   <div id="toolbar" class="toolbar">
     <div class="line">
-      <input id="q" type="search" placeholder="Rechercher un titre ou une note" aria-label="Rechercher">
+      <input id="q" type="search" placeholder="Rechercher un titre, un genre ou une note" aria-label="Rechercher">
       <select id="sort" aria-label="Trier par">
         <option value="recent">Dernière lecture</option>
         <option value="backlog">Chapitres en retard</option>
         <option value="rating">Meilleure note</option>
         <option value="title">Titre (A-Z)</option>
       </select>
+      <button id="btn-genres" class="btn" type="button" aria-expanded="false" aria-controls="genrepanel">Genres</button>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Filtres"></div>
+    <div class="genrepanel" id="genrepanel" hidden></div>
   </div>
 
   <main id="view"></main>
 
-  <footer class="foot" id="foot">
-    <span>Sauvegarde</span>
-    <button id="btn-export" class="btn sm ghost" type="button" hidden>Exporter une sauvegarde</button>
-    <label class="btn sm ghost filebtn" id="lbl-import" hidden>Importer<input id="f-import" class="sr" type="file" accept=".json,application/json"></label>
-  </footer>
+</div>
+
+<div class="sheet" id="settings" role="dialog" aria-modal="true" aria-label="Paramètres" hidden>
+  <div class="scrim" data-close="1"></div>
+  <div class="panel">
+    <div class="phead"><h2>Paramètres</h2><button type="button" class="iconbtn" data-close="1" aria-label="Fermer">✕</button></div>
+    <section class="setsec">
+      <h3>Sauvegarde</h3>
+      <p class="hint">Une copie de tes séries dans un fichier, pour les garder au chaud ou les déplacer.</p>
+      <div class="row">
+        <button id="btn-export" class="btn" type="button">Exporter une sauvegarde</button>
+        <label class="btn filebtn" id="lbl-import">Importer<input id="f-import" class="sr" type="file" accept=".json,application/json"></label>
+      </div>
+    </section>
+    <section class="setsec">
+      <h3>Synchronisation</h3>
+      <p id="set-sync" class="hint"></p>
+      <button type="button" class="btn" data-go="sync">Ouvrir l’onglet Synchro</button>
+    </section>
+    <section class="setsec">
+      <h3>Application</h3>
+      <p class="hint">Si une mise à jour du site n’apparaît pas, recharge-le complètement.</p>
+      <button id="btn-reload" class="btn" type="button">Recharger l’application</button>
+    </section>
+  </div>
 </div>
 
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Fiche de la série" hidden>
@@ -283,7 +358,7 @@ textarea { resize: vertical; min-height: 84px; }
   var statusLabel = function (k) { var f = STATUS.find(function (s) { return s[0] === k; }); return f ? f[1] : 'En cours'; };
 
   var state = {
-    items: [], deleted: {}, rev: 0, ready: false, error: null, mode: 'local', canWrite: true, dl: true,
+    items: [], deleted: {}, rev: 0, genreFilter: [], genresOpen: false, ready: false, error: null, mode: 'local', canWrite: true, dl: true,
     tab: 'library', q: '', status: 'all', fav: false, fresh: false, sort: 'recent',
     sheet: null, draft: null, confirmDel: false, lastFocus: null
   };
@@ -550,8 +625,10 @@ textarea { resize: vertical; min-height: 84px; }
     renderSummary(); renderBanner(); renderTabs();
     $('#toolbar').hidden = state.tab !== 'library';
     $('#btn-add').hidden = !state.canWrite || !state.ready;
+    $('#tabadd').hidden = !state.canWrite || !state.ready;
     $('#btn-export').hidden = !state.dl;
     $('#lbl-import').hidden = !state.canWrite;
+    $('#btn-refresh').classList.toggle('spin', sync.status === 'busy');
     if (!state.ready) { $('#view').innerHTML = '<p class="empty">Chargement…</p>'; return; }
     if (state.tab === 'library') renderLibrary();
     else if (state.tab === 'history') renderHistory();
@@ -588,6 +665,7 @@ textarea { resize: vertical; min-height: 84px; }
     html += '<button type="button" class="chip" data-chip="fav" aria-pressed="' + state.fav + '">Favoris</button>';
     html += '<button type="button" class="chip" data-chip="fresh" aria-pressed="' + state.fresh + '">Nouveaux chapitres</button>';
     $('#chips').innerHTML = html;
+    renderGenrePanel();
   }
 
   function filtered() {
@@ -596,7 +674,8 @@ textarea { resize: vertical; min-height: 84px; }
       if (state.status !== 'all' && m.status !== state.status) return false;
       if (state.fav && !m.fav) return false;
       if (state.fresh && backlog(m) === 0) return false;
-      if (q && norm(m.title + ' ' + (m.notes || '')).indexOf(q) === -1) return false;
+      if (state.genreFilter.length && !state.genreFilter.every(function (k) { return (m.genres || []).some(function (g) { return gkey(g) === k; }); })) return false;
+      if (q && norm(m.title + ' ' + (m.notes || '') + ' ' + (m.genres || []).join(' ')).indexOf(q) === -1) return false;
       return true;
     });
     var s = state.sort;
@@ -619,7 +698,7 @@ textarea { resize: vertical; min-height: 84px; }
       '<h3 class="t">' + esc(m.title) + '</h3>' +
       '<div class="meta"><span class="stat"><i class="dot s-' + esc(m.status) + '"></i>' + esc(statusLabel(m.status)) + '</span>' +
       (m.rating ? '<span class="mono">★ ' + m.rating + '</span>' : '') + '</div>' +
-      '<div class="meta"><span class="mono">' + esc(chText(m)) + '</span></div>' +
+      '<div class="meta"><span class="mono">' + esc(chText(m)) + '</span></div>' + genLine(m) +
       '<div class="bar" aria-hidden="true"><i style="width:' + progress(m) + '%"></i></div>' +
       '<div class="row">' +
       (w ? '<button type="button" class="btn sm" data-act="plus" aria-label="Lire un chapitre de plus : ' + esc(m.title) + '">+1 ch.</button>' : '') +
@@ -755,6 +834,107 @@ textarea { resize: vertical; min-height: 84px; }
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
 
+  /* ---------- Genres ---------- */
+  function gkey(x) { return norm(String(x)).replace(/\s+/g, ' ').trim(); }
+  function allGenres() {
+    var map = {};
+    state.items.forEach(function (m) {
+      (m.genres || []).forEach(function (g) {
+        var k = gkey(g); if (!k) return;
+        if (!map[k]) map[k] = { k: k, name: g, n: 0 };
+        map[k].n++;
+      });
+    });
+    return Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) { return a.name.localeCompare(b.name, 'fr'); });
+  }
+  function cleanGenre(raw) {
+    var g = String(raw || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+    if (!g) return '';
+    var k = gkey(g), found = allGenres().find(function (x) { return x.k === k; });
+    return found ? found.name : g.charAt(0).toUpperCase() + g.slice(1);
+  }
+  function genLine(m) {
+    var g = (m.genres || []).slice(0, 3);
+    return g.length ? '<div class="gen">' + esc(g.join(' · ')) + '</div>' : '';
+  }
+  function addGenre(raw) {
+    var d = state.draft; if (!d) return;
+    String(raw || '').split(',').forEach(function (part) {
+      var g = cleanGenre(part); if (!g) return;
+      if (d.genres.some(function (x) { return gkey(x) === gkey(g); })) return;
+      if (d.genres.length >= 12) { toast('12 genres au maximum par série.'); return; }
+      d.genres.push(g);
+    });
+    renderGenreBox(true);
+  }
+  function delGenre(g) {
+    var d = state.draft; if (!d) return;
+    d.genres = d.genres.filter(function (x) { return x !== g; });
+    renderGenreBox(true);
+  }
+  function renderGenreBox(focus) {
+    var box = $('#genrebox'); if (!box || !state.draft) return;
+    var d = state.draft;
+    box.innerHTML = '<div class="tagbox">' + d.genres.map(function (g) {
+      return '<span class="gtag">' + esc(g) + (state.canWrite ? '<button type="button" data-act="genre-del" data-g="' + esc(g) + '" aria-label="Retirer le genre ' + esc(g) + '">✕</button>' : '') + '</span>';
+    }).join('') + (state.canWrite ? '<input id="f-genre" type="text" data-f="genre-input" autocomplete="off" autocapitalize="sentences" enterkeyhint="done" placeholder="' + (d.genres.length ? 'Ajouter…' : 'Action, Romance…') + '" aria-label="Ajouter un genre">' : (d.genres.length ? '' : '<span class="note">Aucun genre</span>')) + '</div>';
+    updateGenreSugg('');
+    if (focus) { var i = $('#f-genre'); if (i) i.focus(); }
+  }
+  function updateGenreSugg(typed) {
+    var el = $('#genre-sugg'); if (!el || !state.draft) return;
+    if (!state.canWrite) { el.innerHTML = ''; return; }
+    var d = state.draft, t = gkey(typed), have = {};
+    d.genres.forEach(function (g) { have[gkey(g)] = 1; });
+    var list = allGenres().filter(function (x) { return !have[x.k] && (!t || x.k.indexOf(t) !== -1); });
+    list.sort(function (a, b) { return b.n - a.n || a.name.localeCompare(b.name, 'fr'); });
+    var html = '';
+    var exact = t && (have[t] || list.some(function (x) { return x.k === t; }));
+    if (t && !exact) html += '<button type="button" class="chip new" data-act="genre-add" data-g="' + esc(typed.trim()) + '">+ Créer « ' + esc(typed.trim()) + ' »</button>';
+    html += list.slice(0, 10).map(function (x) { return '<button type="button" class="chip" data-act="genre-add" data-g="' + esc(x.name) + '">' + esc(x.name) + '</button>'; }).join('');
+    el.innerHTML = html;
+  }
+  function onGenreInput(t) {
+    if (t.value.indexOf(',') !== -1) {
+      var parts = t.value.split(','), rest = parts.pop();
+      addGenre(parts.join(','));
+      var i = $('#f-genre'); if (i) { i.value = rest; updateGenreSugg(rest); i.focus(); }
+      return;
+    }
+    updateGenreSugg(t.value);
+  }
+  function renderGenrePanel() {
+    var gs = allGenres(), p = $('#genrepanel'), b = $('#btn-genres');
+    state.genreFilter = state.genreFilter.filter(function (k) { return gs.some(function (g) { return g.k === k; }); });
+    var n = state.genreFilter.length;
+    b.textContent = 'Genres' + (n ? ' · ' + n : '');
+    b.setAttribute('aria-expanded', String(state.genresOpen));
+    b.classList.toggle('on', n > 0);
+    p.hidden = !state.genresOpen;
+    if (!state.genresOpen) return;
+    if (!gs.length) { p.innerHTML = '<p class="note" style="margin:0">Aucun genre pour l’instant. Ajoute-en dans la fiche d’une série.</p>'; return; }
+    p.innerHTML = '<div class="chips wrap">' + gs.map(function (g) {
+      return '<button type="button" class="chip" data-g="' + esc(g.k) + '" aria-pressed="' + (state.genreFilter.indexOf(g.k) >= 0) + '">' + esc(g.name) + '<span class="n">' + g.n + '</span></button>';
+    }).join('') + '</div><div class="gfoot"><span class="note">Affiche les séries qui ont tous les genres choisis.</span>' +
+      (n ? '<button type="button" class="btn sm ghost" data-gclear="1">Tout effacer</button>' : '') + '</div>';
+  }
+
+  /* ---------- Paramètres ---------- */
+  function openSettings() {
+    var el = $('#set-sync');
+    el.textContent = !sync.token ? 'La synchro n’est pas activée sur cet appareil.'
+      : sync.status === 'error' ? 'La synchro est en erreur : ' + sync.error
+      : sync.lastOk ? 'Synchro active, dernière mise à jour ' + ago(sync.lastOk) + '.' : 'Synchro active.';
+    state.lastFocusSet = document.activeElement;
+    $('#settings').hidden = false; document.body.style.overflow = 'hidden';
+    var c = document.querySelector('#settings .iconbtn'); if (c) c.focus();
+  }
+  function closeSettings() {
+    $('#settings').hidden = true;
+    if (!state.sheet) document.body.style.overflow = '';
+    if (state.lastFocusSet && state.lastFocusSet.focus) state.lastFocusSet.focus();
+  }
+
   /* ---------- Actions rapides ---------- */
   function plusOne(id) {
     var m = byId(id); if (!m || !state.canWrite) return;
@@ -776,13 +956,14 @@ textarea { resize: vertical; min-height: 84px; }
   /* ---------- Fiche ---------- */
   function newDraft() {
     return { id: uid(), title: '', status: 'reading', chapter: 0, latest: null, rating: 0, fav: false,
-      sites: [{ name: '', url: '' }], notes: '', cover: '', history: [], createdAt: now(), updatedAt: now() };
+      sites: [{ name: '', url: '' }], genres: [], notes: '', cover: '', history: [], createdAt: now(), updatedAt: now() };
   }
   function openSheet(id) {
     var m = id ? byId(id) : null;
     if (id && !m) return;
     state.lastFocus = document.activeElement;
     state.draft = m ? clone(m) : newDraft();
+    if (!Array.isArray(state.draft.genres)) state.draft.genres = [];
     if (!state.draft.sites || !state.draft.sites.length) state.draft.sites = state.canWrite ? [{ name: '', url: '' }] : [];
     state.sheet = m ? m.id : 'new';
     state.confirmDel = false;
@@ -830,6 +1011,7 @@ textarea { resize: vertical; min-height: 84px; }
       '<label for="f-rating">Note<select id="f-rating" data-f="rating"' + dis + '>' + ratingOpts + '</select></label></div>' +
       '<div class="two"><label for="f-chapter">Chapitre lu<input id="f-chapter" type="number" inputmode="decimal" step="any" min="0" data-f="chapter" value="' + (d.chapter == null ? '' : esc(d.chapter)) + '"' + dis + '></label>' +
       '<label for="f-latest">Dernier chapitre sorti<input id="f-latest" type="number" inputmode="decimal" step="any" min="0" data-f="latest" value="' + (d.latest == null ? '' : esc(d.latest)) + '" placeholder="optionnel"' + dis + '></label></div>' +
+      '<div class="lbl"><span>Genres</span><div id="genrebox"></div><div class="sugg" id="genre-sugg"></div>' + (state.canWrite ? '<p class="hint">Écris un genre puis valide avec Entrée ou une virgule, ou touche un genre déjà utilisé.</p>' : '') + '</div>' +
       '<label class="check" for="f-fav"><input id="f-fav" type="checkbox" data-f="fav"' + (d.fav ? ' checked' : '') + dis + '> Série favorite</label>' +
       '<div class="lbl"><span>Sites de lecture</span><div class="sites">' + sites + '</div>' +
       (state.canWrite ? '<div><button type="button" class="btn sm ghost" data-act="site-add">+ Ajouter un site</button></div>' : '') +
@@ -843,10 +1025,12 @@ textarea { resize: vertical; min-height: 84px; }
       '<span class="spacer"></span>' +
       (!isNew && state.canWrite ? '<button type="button" class="btn danger ghost" data-act="del">' + (state.confirmDel ? 'Confirmer la suppression' : 'Supprimer') + '</button>' : '') +
       '</div>';
+    renderGenreBox();
   }
 
   function saveSheet() {
     var d = state.draft; if (!d) return;
+    var gi = $('#f-genre'); if (gi && gi.value.trim()) addGenre(gi.value);
     var title = (d.title || '').trim();
     if (!title) { toast('Donne un titre à la série.'); var t = $('#f-title'); if (t) t.focus(); return; }
     var sites = [];
@@ -899,6 +1083,8 @@ textarea { resize: vertical; min-height: 84px; }
     var act = a.dataset.act, d = state.draft;
     if (act === 'close') closeSheet();
     else if (act === 'save') saveSheet();
+    else if (act === 'genre-add') addGenre(a.dataset.g);
+    else if (act === 'genre-del') delGenre(a.dataset.g);
     else if (act === 'site-add') { d.sites.push({ name: '', url: '' }); renderSheet(); var rows = document.querySelectorAll('.site-row .n'); if (rows.length) rows[rows.length - 1].focus(); }
     else if (act === 'site-del') { d.sites.splice(+a.closest('.site-row').dataset.i, 1); renderSheet(); }
     else if (act === 'cover-clear') { d.cover = ''; renderSheet(); }
@@ -916,6 +1102,7 @@ textarea { resize: vertical; min-height: 84px; }
     else if (f === 'rating') d.rating = +t.value;
     else if (f === 'fav') d.fav = t.checked;
     else if (f === 'notes') d.notes = t.value;
+    else if (f === 'genre-input') onGenreInput(t);
     else if (f === 'site-name') d.sites[+t.closest('.site-row').dataset.i].name = t.value;
     else if (f === 'site-url') d.sites[+t.closest('.site-row').dataset.i].url = t.value;
   });
@@ -935,7 +1122,15 @@ textarea { resize: vertical; min-height: 84px; }
     }
   });
 
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state.sheet) closeSheet(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (!$('#settings').hidden) closeSettings(); else if (state.sheet) closeSheet();
+  });
+  $('#sheet').addEventListener('keydown', function (e) {
+    if (e.target.id !== 'f-genre') return;
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); if (e.target.value.trim()) addGenre(e.target.value); }
+    else if (e.key === 'Backspace' && !e.target.value && state.draft && state.draft.genres.length) { state.draft.genres.pop(); renderGenreBox(true); }
+  });
 
   $('#view').addEventListener('click', function (e) {
     var a = e.target.closest('[data-act]'); if (!a) return;
@@ -980,6 +1175,7 @@ textarea { resize: vertical; min-height: 84px; }
       latest: num(raw.latest),
       rating: Math.max(0, Math.min(5, Math.round(+raw.rating || 0))),
       fav: !!raw.fav,
+      genres: (Array.isArray(raw.genres) ? raw.genres : []).slice(0, 12).map(function (g) { return String(g).replace(/\s+/g, ' ').trim().slice(0, 40); }).filter(Boolean),
       sites: (Array.isArray(raw.sites) ? raw.sites : []).slice(0, 12).map(function (s) { return { name: String((s && s.name) || '').slice(0, 80), url: safeUrl(String((s && s.url) || '').slice(0, 500)) }; }),
       notes: String(raw.notes || '').slice(0, 5000),
       cover: /^data:image\//.test(raw.cover || '') && raw.cover.length < 200000 ? raw.cover : '',
@@ -1007,6 +1203,29 @@ textarea { resize: vertical; min-height: 84px; }
       }
       toast(n + ' série' + (n > 1 ? 's' : '') + ' importée' + (n > 1 ? 's' : '') + '.');
     } catch (err) { toast('Ce fichier n’est pas une sauvegarde Manhwathèque.'); }
+  });
+
+  $('#btn-genres').addEventListener('click', function () { state.genresOpen = !state.genresOpen; renderGenrePanel(); });
+  $('#genrepanel').addEventListener('click', function (e) {
+    var c = e.target.closest('[data-g]'), x = e.target.closest('[data-gclear]');
+    if (x) state.genreFilter = [];
+    else if (c) {
+      var k = c.dataset.g, i = state.genreFilter.indexOf(k);
+      if (i >= 0) state.genreFilter.splice(i, 1); else state.genreFilter.push(k);
+    } else return;
+    renderLibrary();
+  });
+  $('#tabadd').addEventListener('click', function () { openSheet(null); });
+  $('#btn-settings').addEventListener('click', openSettings);
+  $('#settings').addEventListener('click', function (e) {
+    if (e.target.closest('[data-close]')) closeSettings();
+    else if (e.target.closest('[data-go="sync"]')) { closeSettings(); state.tab = 'sync'; render(); window.scrollTo(0, 0); }
+  });
+  $('#btn-reload').addEventListener('click', function () { location.reload(); });
+  $('#btn-refresh').addEventListener('click', async function () {
+    if (!sync.token) { render(); toast('La synchro n’est pas activée. Elle se règle dans l’onglet Synchro.'); return; }
+    await runSync();
+    if (sync.status === 'ok') toast('À jour.');
   });
 
   render();
