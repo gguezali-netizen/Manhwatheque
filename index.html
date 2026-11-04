@@ -371,7 +371,7 @@ textarea { resize: vertical; min-height: 84px; }
   var statusLabel = function (k) { var f = STATUS.find(function (s) { return s[0] === k; }); return f ? f[1] : 'En cours'; };
 
   var state = {
-    items: [], deleted: {}, rev: 0, auto: {}, autoAt: null, checkedAt: null, seen: {}, genreFilter: [], genresOpen: false, filterOpen: false, ready: false, error: null, mode: 'local', canWrite: true, dl: true,
+    items: [], deleted: {}, rev: 0, auto: {}, covers: {}, autoAt: null, checkedAt: null, seen: {}, genreFilter: [], genresOpen: false, filterOpen: false, ready: false, error: null, mode: 'local', canWrite: true, dl: true,
     tab: 'library', q: '', status: 'all', fav: false, fresh: false, sort: 'recent',
     sheet: null, draft: null, confirmDel: false, lastFocus: null
   };
@@ -556,7 +556,26 @@ textarea { resize: vertical; min-height: 84px; }
     return { items: Array.isArray(d.items) ? d.items : [], deleted: d.deleted || {} };
   }
   /* Résultats du robot d'alertes : facultatifs, leur absence ou leur échec ne gêne jamais la synchro. */
+  async function readCovers(j) {
+    try {
+      var f = j.files && j.files['couvertures.json'];
+      if (!f) return;
+      var text = f.content;
+      if (f.truncated || text == null) {
+        var rr = await fetch(f.raw_url, { cache: 'no-store' });
+        if (!rr.ok) return;
+        text = await rr.text();
+      }
+      var c = JSON.parse(text), out = {};
+      Object.keys((c && c.items) || {}).forEach(function (id) {
+        var d = c.items[id] && c.items[id].data;
+        if (typeof d === 'string' && /^data:image\//.test(d) && d.length < 200000) out[id] = d;
+      });
+      state.covers = out;
+    } catch (e) { /* les couvertures sont facultatives */ }
+  }
   async function readAlertes(j) {
+    await readCovers(j);
     try {
       var f = j.files && j.files['alertes.json'];
       if (!f) return;
@@ -623,6 +642,44 @@ textarea { resize: vertical; min-height: 84px; }
     clearTimeout(sync.timer);
     sync.timer = setTimeout(runSync, ms || 1500);
   }
+  /* Remplit les champs vides (couverture, genres, notes) avec ce que le robot a lu sur les sites.
+     Chaque champ n'est rempli qu'une seule fois par série : si tu l'efface ensuite, il ne revient pas. */
+  var FILLABLE = ['cover', 'genres', 'notes'];
+  function autoInfo(m) {
+    var a = state.auto[m.id], meta = (a && a.meta) || {};
+    return {
+      cover: state.covers[m.id] || '',
+      genres: Array.isArray(meta.genres) ? meta.genres.filter(function (g) { return typeof g === 'string'; }) : [],
+      notes: typeof meta.description === 'string' ? meta.description : ''
+    };
+  }
+  function fillFrom(m, only) {
+    var info = autoInfo(m), got = [];
+    if ((!only || only.indexOf('cover') >= 0) && info.cover) { if (!m.cover) { m.cover = info.cover; got.push('cover'); } }
+    if ((!only || only.indexOf('genres') >= 0) && info.genres.length) {
+      if (!(m.genres || []).length) { m.genres = info.genres.slice(0, 12).map(cleanGenre).filter(Boolean); if (m.genres.length) got.push('genres'); }
+    }
+    if ((!only || only.indexOf('notes') >= 0) && info.notes) { if (!(m.notes || '').trim()) { m.notes = info.notes.slice(0, 5000); got.push('notes'); } }
+    return got;
+  }
+  function autoFill() {
+    if (!state.canWrite || !state.ready) return;
+    var todo = [];
+    state.items.forEach(function (m) {
+      var info = autoInfo(m), filled = m.filled || [];
+      var only = FILLABLE.filter(function (f) {
+        if (filled.indexOf(f) >= 0) return false;
+        return f === 'genres' ? info.genres.length > 0 : !!info[f];
+      });
+      if (!only.length) return;
+      var next = clone(m);
+      fillFrom(next, only);
+      next.filled = filled.concat(only);
+      next.updatedAt = now();
+      todo.push(next);
+    });
+    todo.forEach(function (n) { store.save(n); });
+  }
   async function runSync() {
     if (!sync.token) return;
     if (sync.busy) { sync.again = true; return; }
@@ -649,6 +706,7 @@ textarea { resize: vertical; min-height: 84px; }
       if (e && (e.code === 'auth' || e.code === 'scope')) sync.again = false;
     }
     sync.busy = false;
+    if (sync.status === 'ok') autoFill();
     if (sync.again) { sync.again = false; schedulePush(400); }
     render();
   }
@@ -946,6 +1004,13 @@ textarea { resize: vertical; min-height: 84px; }
       '<div class="row"><button type="button" class="btn sm primary" data-act="news-view">Voir dans la bibliothèque</button>' +
       '<button type="button" class="btn sm" data-act="news-seen">Marquer comme vu</button></div>';
   }
+  function fillBtn(d) {
+    if (!state.canWrite) return '';
+    var i = autoInfo(d);
+    if (!i.cover && !i.genres.length && !i.notes) return '';
+    return '<div><button type="button" class="btn sm ghost" data-act="meta-fill">Récupérer l’image, les genres et la description</button>' +
+      '<p class="hint" style="margin-top:6px">Remplit seulement ce qui est vide dans cette fiche. Rien n’est écrasé.</p></div>';
+  }
   function chaptersHtml(d) {
     var a = state.auto[d.id];
     if (!a || !a.sources) return '';
@@ -1142,7 +1207,7 @@ textarea { resize: vertical; min-height: 84px; }
       '<div class="coveredit"><div class="mini">' + coverHtml(d) + '</div><div class="stack">' +
       (state.canWrite ? '<label class="btn sm ghost filebtn">Choisir une couverture<input id="f-cover" class="sr" type="file" accept="image/*"></label>' : '') +
       (d.cover && state.canWrite ? '<button type="button" class="btn sm ghost" data-act="cover-clear">Retirer l’image</button>' : '') +
-      '<p class="hint">Les images d’autres sites ne s’affichent pas ici : importe un fichier image.</p></div></div>' +
+      '<p class="hint">Si un lien de site est renseigné, l’image est récupérée automatiquement quand c’est possible. Sinon, importe un fichier.</p></div></div>' +
       '<label for="f-title">Titre<input id="f-title" type="text" data-f="title" value="' + esc(d.title) + '" maxlength="200" autocomplete="off"' + dis + '></label>' +
       '<div class="two"><label for="f-status">Statut<select id="f-status" data-f="status"' + dis + '>' + statusOpts + '</select></label>' +
       '<label for="f-rating">Note<select id="f-rating" data-f="rating"' + dis + '>' + ratingOpts + '</select></label></div>' +
@@ -1152,7 +1217,7 @@ textarea { resize: vertical; min-height: 84px; }
       '<label class="check" for="f-fav"><input id="f-fav" type="checkbox" data-f="fav"' + (d.fav ? ' checked' : '') + dis + '> Série favorite</label>' +
       '<div class="lbl"><span>Sites de lecture</span><div class="sites">' + sites + '</div>' +
       (state.canWrite ? '<div><button type="button" class="btn sm ghost" data-act="site-add">+ Ajouter un site</button></div>' : '') +
-      '<p class="hint">Le robot d’alertes lit ces liens pour repérer les nouveaux chapitres. Il n’agit que sur le dernier chapitre sorti, jamais sur ta progression.</p>' + detectHtml(d) + chaptersHtml(d) + '</div>' +
+      '<p class="hint">Le robot d’alertes lit ces liens pour repérer les nouveaux chapitres. Il n’agit que sur le dernier chapitre sorti, jamais sur ta progression.</p>' + detectHtml(d) + chaptersHtml(d) + fillBtn(d) + '</div>' +
       '<label for="f-notes">Notes<textarea id="f-notes" data-f="notes" maxlength="5000"' + dis + '>' + esc(d.notes || '') + '</textarea></label>' +
       (hist ? '<div class="lbl"><span>Dernières lectures</span><ul class="hist">' + hist + '</ul></div>' : '') +
       '</div>' +
@@ -1222,6 +1287,12 @@ textarea { resize: vertical; min-height: 84px; }
     else if (act === 'save') saveSheet();
     else if (act === 'genre-add') addGenre(a.dataset.g);
     else if (act === 'genre-del') delGenre(a.dataset.g);
+    else if (act === 'meta-fill') {
+      var d0 = state.draft, got = fillFrom(d0, null);
+      var lab = { cover: 'image', genres: 'genres', notes: 'description (dans les notes)' };
+      toast(got.length ? 'Récupéré : ' + got.map(function (g) { return lab[g]; }).join(', ') + '. Pense à enregistrer.' : 'Rien à ajouter : les champs sont déjà remplis, ou le robot n’a rien trouvé.');
+      renderSheet();
+    }
     else if (act === 'site-add') { d.sites.push({ name: '', url: '' }); renderSheet(); var rows = document.querySelectorAll('.site-row .n'); if (rows.length) rows[rows.length - 1].focus(); }
     else if (act === 'site-del') { d.sites.splice(+a.closest('.site-row').dataset.i, 1); renderSheet(); }
     else if (act === 'cover-clear') { d.cover = ''; renderSheet(); }
@@ -1319,6 +1390,7 @@ textarea { resize: vertical; min-height: 84px; }
       sites: (Array.isArray(raw.sites) ? raw.sites : []).slice(0, 12).map(function (s) { return { name: String((s && s.name) || '').slice(0, 80), url: safeUrl(String((s && s.url) || '').slice(0, 500)) }; }),
       notes: String(raw.notes || '').slice(0, 5000),
       cover: /^data:image\//.test(raw.cover || '') && raw.cover.length < 200000 ? raw.cover : '',
+      filled: (Array.isArray(raw.filled) ? raw.filled : []).filter(function (f) { return FILLABLE.indexOf(f) >= 0; }),
       history: (Array.isArray(raw.history) ? raw.history : []).slice(-120).map(function (h) { return { c: num(h && h.c) || 0, t: +(h && h.t) || 0 }; }),
       createdAt: +raw.createdAt || now(),
       updatedAt: +raw.updatedAt || now()
