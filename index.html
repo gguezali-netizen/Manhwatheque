@@ -103,7 +103,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 
 /* Barre d'outils */
 .toolbar { display: grid; gap: 10px; margin-bottom: 18px; }
 .toolbar .line { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-input[type="text"], input[type="search"], input[type="number"], input[type="url"], select, textarea {
+input[type="text"], input[type="password"], input[type="search"], input[type="number"], input[type="url"], select, textarea {
   width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0;
 }
 textarea { resize: vertical; min-height: 84px; }
@@ -128,13 +128,13 @@ textarea { resize: vertical; min-height: 84px; }
 .fav[aria-pressed="true"] { color: #FF7A8A; }
 .fav[aria-pressed="true"] path { fill: currentColor; }
 .fav[disabled] { cursor: default; }
-.t { font-family: var(--font-display); font-weight: 600; font-size: 15px; line-height: 1.2; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.t { font-family: var(--font-display); font-weight: 600; font-size: 15px; line-height: 1.2; min-height: 2.4em; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .meta { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; font-size: 12.5px; color: var(--muted); }
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sc, var(--muted)); display: inline-block; flex: none; }
 .s-reading { --sc: var(--accent); } .s-planned { --sc: var(--muted); } .s-paused { --sc: var(--warn); } .s-done { --sc: var(--good); } .s-dropped { --sc: var(--bad); }
 .stat { display: inline-flex; align-items: center; gap: 5px; }
-.bar { height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+.bar { margin-top: auto; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--accent); }
 .row { display: flex; gap: 6px; flex-wrap: wrap; }
 
@@ -145,7 +145,14 @@ textarea { resize: vertical; min-height: 84px; }
 
 /* Historique */
 .day { font-family: var(--font-display); font-weight: 600; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 4px; }
-.hrow { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 0; border: 0; border-bottom: 1px solid var(--line); background: none; width: 100%; text-align: left; cursor: pointer; }
+.hwrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; border-bottom: 1px solid var(--line); }
+.hrow { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 0; border: 0; background: none; width: 100%; text-align: left; cursor: pointer; }
+.hdel { width: 44px; height: 44px; border: 0; background: none; color: var(--muted); font-size: 16px; cursor: pointer; border-radius: 8px; }
+.hdel:hover, .hdel:focus-visible { color: var(--bad); background: var(--surface-2); }
+.hclear { margin: 22px 0 8px; display: flex; justify-content: center; }
+.iconbtn2.work svg { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+.setsec label { justify-self: stretch; width: 100%; display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); margin-top: 10px; }
 .hrow:hover .ht { color: var(--accent); }
 .mini { width: 36px; aspect-ratio: 3 / 4; border-radius: 5px; overflow: hidden; background: var(--surface-2); }
 .mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -290,6 +297,7 @@ textarea { resize: vertical; min-height: 84px; }
     </div>
     <div class="hbtns">
       <button id="btn-refresh" class="iconbtn2" type="button" aria-label="Actualiser" title="Actualiser"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+      <button id="btn-check" class="iconbtn2" type="button" aria-label="Vérifier les nouveaux chapitres maintenant" title="Vérifier les nouveaux chapitres maintenant"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8.2 11l2 2 3.6-3.8"/></svg></button>
       <button id="btn-settings" class="iconbtn2" type="button" aria-label="Paramètres" title="Paramètres"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
       <button id="btn-add" class="btn primary desk" type="button" data-act="add" hidden>+ Ajouter une série</button>
     </div>
@@ -336,6 +344,18 @@ textarea { resize: vertical; min-height: 84px; }
       <h3>Synchronisation</h3>
       <p id="set-sync" class="hint"></p>
       <button type="button" class="btn" data-go="sync">Ouvrir l’onglet Synchro</button>
+    </section>
+    <section class="setsec" id="set-robot">
+      <h3>Vérification des chapitres</h3>
+      <p class="hint">Le bouton en forme de loupe, en haut, lance la vérification tout de suite au lieu d’attendre la prochaine heure. Il a besoin d’un jeton GitHub limité au dépôt du robot (droit « Actions » en lecture et écriture). Il reste sur cet appareil.</p>
+      <p id="robot-state" class="hint"></p>
+      <label for="robot-repo">Dépôt du robot<input id="robot-repo" type="text" placeholder="ton-pseudo/manhwatheque-alertes" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label for="robot-token">Jeton<input id="robot-token" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <div class="row" style="margin-top:10px">
+        <button id="robot-save" class="btn" type="button">Enregistrer</button>
+        <button id="robot-forget" class="btn ghost" type="button">Retirer le jeton</button>
+        <a class="btn ghost" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Créer un jeton ↗</a>
+      </div>
     </section>
     <section class="setsec">
       <h3>Application</h3>
@@ -495,12 +515,12 @@ textarea { resize: vertical; min-height: 84px; }
   function loadSyncCfg() {
     try {
       var c = JSON.parse(localStorage.getItem(SYNC_KEY) || '{}');
-      sync.token = c.token || ''; sync.gistId = c.gistId || ''; sync.lastOk = c.lastOk || 0;
+      sync.token = c.token || ''; sync.gistId = c.gistId || ''; sync.lastOk = c.lastOk || 0; sync.owner = c.owner || '';
     } catch (e) { /* stockage indisponible */ }
     sync.status = sync.token ? 'idle' : 'off';
   }
   function saveSyncCfg() {
-    try { localStorage.setItem(SYNC_KEY, JSON.stringify({ token: sync.token, gistId: sync.gistId, lastOk: sync.lastOk })); } catch (e) { /* ignoré */ }
+    try { localStorage.setItem(SYNC_KEY, JSON.stringify({ token: sync.token, gistId: sync.gistId, lastOk: sync.lastOk, owner: sync.owner || '' })); } catch (e) { /* ignoré */ }
   }
   function takeHashToken() {
     var m = /[#&]sync=([^&]+)/.exec(location.hash || '');
@@ -544,6 +564,7 @@ textarea { resize: vertical; min-height: 84px; }
     var r = await gh('/gists/' + encodeURIComponent(sync.gistId));
     if (!r.ok) throw fail(r);
     var j = await r.json(), f = j.files && j.files[FILE];
+    if (j.owner && j.owner.login && j.owner.login !== sync.owner) { sync.owner = j.owner.login; saveSyncCfg(); }
     if (!f) throw { code: 'gone' };
     var text = f.content;
     if (f.truncated || text == null) {
@@ -679,6 +700,60 @@ textarea { resize: vertical; min-height: 84px; }
       todo.push(next);
     });
     todo.forEach(function (n) { store.save(n); });
+  }
+  /* ---------- Lancer la vérification depuis le site ---------- */
+  var ROBOT_KEY = 'manhwatheque.robot';
+  var robot = { token: '', repo: '', busy: false };
+  function loadRobot() {
+    try { var c = JSON.parse(localStorage.getItem(ROBOT_KEY) || '{}'); robot.token = c.token || ''; robot.repo = c.repo || ''; } catch (e) { /* stockage indisponible */ }
+  }
+  function saveRobot() { try { localStorage.setItem(ROBOT_KEY, JSON.stringify({ token: robot.token, repo: robot.repo })); } catch (e) { /* ignoré */ } }
+  function robotRepo() { return robot.repo || (sync.owner ? sync.owner + '/manhwatheque-alertes' : ''); }
+  function ghr(path, opts) {
+    opts = opts || {};
+    var h = { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + robot.token };
+    if (opts.body) h['Content-Type'] = 'application/json';
+    return fetch(API + path, { method: opts.method || 'GET', headers: h, body: opts.body, cache: 'no-store' });
+  }
+  function setRobotBusy(b) { robot.busy = b; var el = $('#btn-check'); if (el) el.classList.toggle('work', b); }
+  async function runRobot() {
+    if (robot.busy) { toast('Une vérification est déjà en cours.'); return; }
+    var repo = robotRepo();
+    if (!robot.token || !repo) { openSettings(); var ti = $('#robot-token'); if (ti) ti.focus(); toast('Ajoute d’abord le jeton de vérification.'); return; }
+    var base = '/repos/' + repo + '/actions/workflows/alertes.yml';
+    setRobotBusy(true);
+    try {
+      var before = 0;
+      try {
+        var r0 = await ghr(base + '/runs?event=workflow_dispatch&per_page=1');
+        if (r0.ok) { var j0 = await r0.json(); before = (j0.workflow_runs && j0.workflow_runs[0] && j0.workflow_runs[0].id) || 0; }
+      } catch (e) { /* le suivi sera simplement moins précis */ }
+      var r = await ghr(base + '/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main', inputs: { rapport: 'false' } }) });
+      if (!r.ok) {
+        toast(r.status === 401 ? 'GitHub refuse le jeton (incorrect ou expiré).'
+          : r.status === 403 ? 'Le jeton n’a pas le droit « Actions : lecture et écriture » sur ce dépôt.'
+          : r.status === 404 ? 'Dépôt ou jeton introuvable : vérifie le nom du dépôt et l’accès du jeton.'
+          : 'Impossible de lancer la vérification (HTTP ' + r.status + ').');
+        return;
+      }
+      toast('Vérification lancée. Résultats dans environ une minute.');
+      var wait = window.__robotPollMs || 6000, done = null;
+      for (var i = 0; i < 45 && !done; i++) {
+        await new Promise(function (ok) { setTimeout(ok, wait); });
+        try {
+          var rr = await ghr(base + '/runs?event=workflow_dispatch&per_page=3');
+          if (!rr.ok) continue;
+          var jj = await rr.json();
+          done = (jj.workflow_runs || []).find(function (w) { return w.id > before && w.status === 'completed'; }) || null;
+        } catch (e) { /* on réessaie */ }
+      }
+      if (!done) { toast('La vérification est toujours en cours. Actualise dans un instant.'); return; }
+      if (done.conclusion !== 'success') { toast('La vérification a échoué. Détails dans l’onglet Actions de GitHub.'); return; }
+      if (sync.token) await runSync();
+      toast('Vérification terminée.');
+    } catch (e) {
+      toast('Impossible de joindre GitHub. Réessaie dans un instant.');
+    } finally { setRobotBusy(false); }
   }
   async function runSync() {
     if (!sync.token) return;
@@ -880,11 +955,15 @@ textarea { resize: vertical; min-height: 84px; }
     rows.forEach(function (r) {
       var d = dayLabel(r.t);
       if (d !== last) { html += '<h2 class="day">' + esc(d) + '</h2>'; last = d; }
-      html += '<button type="button" class="hrow" data-id="' + esc(r.m.id) + '" data-act="open">' +
+      html += '<div class="hwrap" data-id="' + esc(r.m.id) + '" data-t="' + esc(r.t) + '" data-c="' + esc(r.c) + '">' +
+        '<button type="button" class="hrow" data-act="open">' +
         '<span class="mini">' + coverHtml(r.m) + '</span>' +
         '<span><span class="ht">' + esc(r.m.title) + '</span><br><span class="hs mono">chapitre ' + esc(fmt(r.c)) + '</span></span>' +
-        '<span class="hs mono">' + new Date(r.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span></button>';
+        '<span class="hs mono">' + new Date(r.t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span></button>' +
+        (state.canWrite ? '<button type="button" class="hdel" data-act="hdel" aria-label="Supprimer cette lecture de l’historique : ' + esc(r.m.title) + ', chapitre ' + esc(fmt(r.c)) + '" title="Supprimer de l’historique">✕</button>' : '') +
+        '</div>';
     });
+    if (state.canWrite) html += '<div class="hclear"><button type="button" class="btn sm ghost danger" data-act="hclear">' + (state.confirmClear ? 'Confirmer : tout effacer' : 'Vider tout l’historique') + '</button></div>';
     view.innerHTML = html;
   }
 
@@ -1129,6 +1208,10 @@ textarea { resize: vertical; min-height: 84px; }
     el.textContent = !sync.token ? 'La synchro n’est pas activée sur cet appareil.'
       : sync.status === 'error' ? 'La synchro est en erreur : ' + sync.error
       : sync.lastOk ? 'Synchro active, dernière mise à jour ' + ago(sync.lastOk) + '.' : 'Synchro active.';
+    $('#robot-repo').value = robot.repo || '';
+    $('#robot-repo').placeholder = (sync.owner || 'ton-pseudo') + '/manhwatheque-alertes';
+    $('#robot-token').value = '';
+    $('#robot-state').textContent = robot.token ? 'Un jeton est enregistré sur cet appareil.' : 'Pas encore de jeton sur cet appareil.';
     state.lastFocusSet = document.activeElement;
     $('#settings').hidden = false; document.body.style.overflow = 'hidden';
     var c = document.querySelector('#settings .iconbtn'); if (c) c.focus();
@@ -1150,6 +1233,27 @@ textarea { resize: vertical; min-height: 84px; }
     next.updatedAt = now();
     store.save(next);
     toast(m.title + ' · chapitre ' + fmt(next.chapter), function () { store.save(prev); });
+  }
+  function deleteHistory(id, t, c) {
+    var m = byId(id); if (!m || !state.canWrite) return;
+    var prev = clone(m), next = clone(m), hit = false;
+    next.history = (m.history || []).filter(function (h) { if (!hit && String(h.t) === String(t) && String(h.c) === String(c)) { hit = true; return false; } return true; });
+    if (!hit) return;
+    next.updatedAt = now();
+    store.save(next);
+    toast('Lecture supprimée de l’historique.', function () { prev.updatedAt = now(); store.save(prev); });
+  }
+  function clearHistory() {
+    if (!state.canWrite) return;
+    if (!state.confirmClear) { state.confirmClear = true; renderHistory(); clearTimeout(state.confirmTimer); state.confirmTimer = setTimeout(function () { state.confirmClear = false; if (state.tab === 'history') renderHistory(); }, 6000); return; }
+    state.confirmClear = false;
+    var prevs = [];
+    state.items.forEach(function (m) {
+      if (!(m.history || []).length) return;
+      prevs.push(clone(m));
+      var next = clone(m); next.history = []; next.updatedAt = now(); store.save(next);
+    });
+    toast('Historique vidé.', function () { prevs.forEach(function (p) { p.updatedAt = now(); store.save(p); }); });
   }
   function toggleFav(id) {
     var m = byId(id); if (!m || !state.canWrite) return;
@@ -1349,6 +1453,8 @@ textarea { resize: vertical; min-height: 84px; }
     if (act === 'add') openSheet(null);
     else if (act === 'open' && id) openSheet(id);
     else if (act === 'plus' && id) plusOne(id);
+    else if (act === 'hdel' && id) deleteHistory(id, host.dataset.t, host.dataset.c);
+    else if (act === 'hclear') clearHistory();
     else if (act === 'fav' && id) toggleFav(id);
     else if (act === 'sync-connect') connectToken();
     else if (act === 'sync-now') runSync();
@@ -1448,12 +1554,30 @@ textarea { resize: vertical; min-height: 84px; }
     else if (e.target.closest('[data-go="sync"]')) { closeSettings(); state.tab = 'sync'; render(); window.scrollTo(0, 0); }
   });
   $('#btn-reload').addEventListener('click', function () { location.reload(); });
+  $('#btn-check').addEventListener('click', runRobot);
+  $('#robot-save').addEventListener('click', function () {
+    var t = $('#robot-token').value.trim(), repo = $('#robot-repo').value.trim();
+    if (repo && !/^[\w.-]+\/[\w.-]+$/.test(repo)) { toast('Le dépôt doit ressembler à ton-pseudo/manhwatheque-alertes.'); return; }
+    if (t && !/^[A-Za-z0-9_]{20,255}$/.test(t)) { toast('Ce jeton ne ressemble pas à un jeton GitHub.'); return; }
+    if (t) robot.token = t;
+    robot.repo = repo;
+    saveRobot();
+    $('#robot-token').value = '';
+    $('#robot-state').textContent = robot.token ? 'Un jeton est enregistré sur cet appareil.' : 'Pas encore de jeton sur cet appareil.';
+    toast(robot.token ? 'Enregistré.' : 'Ajoute aussi le jeton pour pouvoir lancer la vérification.');
+  });
+  $('#robot-forget').addEventListener('click', function () {
+    robot.token = ''; saveRobot();
+    $('#robot-state').textContent = 'Pas encore de jeton sur cet appareil.';
+    toast('Jeton retiré de cet appareil.');
+  });
   $('#btn-refresh').addEventListener('click', async function () {
     if (!sync.token) { render(); toast('La synchro n’est pas activée. Elle se règle dans l’onglet Synchro.'); return; }
     await runSync();
     if (sync.status === 'ok') toast('À jour.');
   });
 
+  loadRobot();
   render();
   store.init();
 })();
