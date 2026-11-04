@@ -1008,8 +1008,10 @@ textarea { resize: vertical; min-height: 84px; }
     if (!state.canWrite) return '';
     var i = autoInfo(d);
     if (!i.cover && !i.genres.length && !i.notes) return '';
+    var swap = i.cover && d.cover && d.cover !== i.cover;
     return '<div><button type="button" class="btn sm ghost" data-act="meta-fill">Récupérer l’image, les genres et la description</button>' +
-      '<p class="hint" style="margin-top:6px">Remplit seulement ce qui est vide dans cette fiche. Rien n’est écrasé.</p></div>';
+      (swap ? ' <button type="button" class="btn sm ghost" data-act="cover-auto">Remplacer l’image par celle du robot</button>' : '') +
+      '<p class="hint" style="margin-top:6px">Le premier bouton remplit seulement ce qui est vide. Le second remplace l’image actuelle.</p></div>';
   }
   function chaptersHtml(d) {
     var a = state.auto[d.id];
@@ -1296,6 +1298,7 @@ textarea { resize: vertical; min-height: 84px; }
     else if (act === 'site-add') { d.sites.push({ name: '', url: '' }); renderSheet(); var rows = document.querySelectorAll('.site-row .n'); if (rows.length) rows[rows.length - 1].focus(); }
     else if (act === 'site-del') { d.sites.splice(+a.closest('.site-row').dataset.i, 1); renderSheet(); }
     else if (act === 'cover-clear') { d.cover = ''; renderSheet(); }
+    else if (act === 'cover-auto') { var ci = autoInfo(d).cover; if (ci) { d.cover = ci; toast('Image remplacée. Pense à enregistrer.'); renderSheet(); } }
     else if (act === 'del') {
       if (!state.confirmDel) { state.confirmDel = true; renderSheet(); return; }
       var id = d.id; closeSheet(); store.remove(id); toast('Série supprimée.');
