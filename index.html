@@ -108,6 +108,7 @@ input[type="text"], input[type="search"], input[type="number"], input[type="url"
 }
 textarea { resize: vertical; min-height: 84px; }
 #q { flex: 1 1 220px; width: auto; }
+#filter { flex: 0 1 200px; width: auto; }
 #sort { flex: 0 1 200px; width: auto; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: var(--surface); padding: 5px 11px; border-radius: 999px; cursor: pointer; }
@@ -209,7 +210,7 @@ textarea { resize: vertical; min-height: 84px; }
 .chlist { margin-top: 8px; min-width: 0; max-width: 100%; }
 .chlist summary { cursor: pointer; font-size: 14px; color: var(--fg); padding: 10px 0; }
 .chlist-h { font-size: 12.5px; color: var(--muted); margin: 8px 0 6px; overflow-wrap: anywhere; }
-.chips { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; overscroll-behavior: contain; min-width: 0; }
+.chlist-items { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; overscroll-behavior: contain; min-width: 0; }
 .chip-ch { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 500; }
 .chip-ch .go { font-size: 14px; opacity: .7; }
 .chip-ch.new { color: var(--fg); background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
@@ -264,6 +265,7 @@ textarea { resize: vertical; min-height: 84px; }
   .btn { min-height: 42px; }
   .btn.sm { min-height: 36px; padding: 7px 12px; }
   #q { flex-basis: 100%; }
+  #filter { flex: 1 1 0; }
   #sort { flex: 1 1 0; }
   .chips:not(.wrap) { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
   .chips:not(.wrap)::-webkit-scrollbar { display: none; }
@@ -307,15 +309,15 @@ textarea { resize: vertical; min-height: 84px; }
   <div id="toolbar" class="toolbar">
     <div class="line">
       <input id="q" type="search" placeholder="Rechercher un titre, un genre ou une note" aria-label="Rechercher">
-      <select id="sort" aria-label="Trier par">
-        <option value="recent">Dernière lecture</option>
-        <option value="backlog">Chapitres en retard</option>
-        <option value="rating">Meilleure note</option>
-        <option value="title">Titre (A-Z)</option>
+      <select id="filter" aria-label="Afficher"></select>
+      <select id="sort" aria-label="Trier par : récents, en retard, mieux notés, titre">
+        <option value="recent">Récents</option>
+        <option value="backlog">En retard</option>
+        <option value="rating">Mieux notés</option>
+        <option value="title">Titre A-Z</option>
       </select>
       <button id="btn-genres" class="btn" type="button" aria-expanded="false" aria-controls="genrepanel">Genres</button>
     </div>
-    <div class="chips" id="chips" role="group" aria-label="Filtres"></div>
     <div class="genrepanel" id="genrepanel" hidden></div>
   </div>
 
@@ -733,14 +735,14 @@ textarea { resize: vertical; min-height: 84px; }
   /* ---------- Bibliothèque ---------- */
   function renderChips() {
     var counts = {}; state.items.forEach(function (m) { counts[m.status] = (counts[m.status] || 0) + 1; });
-    var html = '<button type="button" class="chip" data-chip="status:all" aria-pressed="' + (state.status === 'all') + '">Tous<span class="n">' + state.items.length + '</span></button>';
-    STATUS.forEach(function (s) {
-      html += '<button type="button" class="chip" data-chip="status:' + s[0] + '" aria-pressed="' + (state.status === s[0]) + '">' + s[1] + '<span class="n">' + (counts[s[0]] || 0) + '</span></button>';
-    });
-    html += '<span class="sep" aria-hidden="true"></span>';
-    html += '<button type="button" class="chip" data-chip="fav" aria-pressed="' + state.fav + '">Favoris</button>';
-    html += '<button type="button" class="chip" data-chip="fresh" aria-pressed="' + state.fresh + '">Nouveaux chapitres</button>';
-    $('#chips').innerHTML = html;
+    var favN = state.items.filter(function (m) { return m.fav; }).length;
+    var newN = state.items.filter(function (m) { return backlog(m) > 0; }).length;
+    var cur = state.fresh ? 'fresh' : state.fav ? 'fav' : 'status:' + state.status;
+    var opt = function (v, label) { return '<option value="' + v + '"' + (cur === v ? ' selected' : '') + '>' + label + '</option>'; };
+    var html = opt('status:all', 'Tous (' + state.items.length + ')');
+    STATUS.forEach(function (s) { html += opt('status:' + s[0], s[1] + ' (' + (counts[s[0]] || 0) + ')'); });
+    html += opt('fav', 'Favoris (' + favN + ')') + opt('fresh', 'Nouveaux chapitres (' + newN + ')');
+    $('#filter').innerHTML = html;
     renderGenrePanel();
   }
 
@@ -946,7 +948,7 @@ textarea { resize: vertical; min-height: 84px; }
       var list = chaptersOf(d, s.url);
       if (!list.length) return;
       var host = ''; try { host = new URL(s.url).hostname.replace(/^www\./, ''); } catch (e) { host = s.url; }
-      blocks.push('<div class="chlist-h">' + esc(host) + '</div><div class="chips">' + list.slice().reverse().map(function (c) {
+      blocks.push('<div class="chlist-h">' + esc(host) + '</div><div class="chlist-items">' + list.slice().reverse().map(function (c) {
         return '<a class="chip-ch' + (c[0] > r + 1e-9 ? ' new' : '') + '" href="' + esc(c[1]) + '" target="_blank" rel="noopener noreferrer" aria-label="Ouvrir le chapitre ' + esc(fmt(c[0])) + '"><span>Chapitre ' + esc(fmt(c[0])) + (c[0] > r + 1e-9 ? ' · non lu' : '') + '</span><span class="go" aria-hidden="true">↗</span></a>';
       }).join('') + '</div>');
     });
@@ -1278,12 +1280,10 @@ textarea { resize: vertical; min-height: 84px; }
   });
   $('#btn-add').addEventListener('click', function () { openSheet(null); });
 
-  $('#chips').addEventListener('click', function (e) {
-    var c = e.target.closest('[data-chip]'); if (!c) return;
-    var k = c.dataset.chip;
-    if (k === 'fav') state.fav = !state.fav;
-    else if (k === 'fresh') state.fresh = !state.fresh;
-    else state.status = k.split(':')[1];
+  $('#filter').addEventListener('change', function (e) {
+    var k = e.target.value;
+    state.fav = k === 'fav'; state.fresh = k === 'fresh';
+    state.status = k.indexOf('status:') === 0 ? k.split(':')[1] : 'all';
     render();
   });
   $('#q').addEventListener('input', function (e) { state.q = e.target.value; renderLibrary(); });
