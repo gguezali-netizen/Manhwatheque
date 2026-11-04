@@ -108,8 +108,6 @@ input[type="text"], input[type="search"], input[type="number"], input[type="url"
 }
 textarea { resize: vertical; min-height: 84px; }
 #q { flex: 1 1 220px; width: auto; }
-#filter { flex: 0 1 200px; width: auto; }
-#sort { flex: 0 1 200px; width: auto; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { font-size: 13px; font-weight: 500; border: 1px solid var(--line); background: var(--surface); padding: 5px 11px; border-radius: 999px; cursor: pointer; }
 .chip:hover { border-color: var(--accent); }
@@ -186,6 +184,10 @@ textarea { resize: vertical; min-height: 84px; }
 .btn.on { background: var(--accent-soft); border-color: var(--accent); }
 .genrepanel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: grid; gap: 10px; }
 .genrepanel .chips { flex-wrap: wrap; }
+.fgroup { display: grid; gap: 6px; }
+.fgroup + .fgroup { margin-top: 4px; }
+.fgroup > span { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+#btn-filter.on, #btn-genres.on { border-color: var(--accent); color: var(--accent); }
 .gfoot { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .gen { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .setsec { padding: 14px 0; border-top: 1px solid var(--line); display: grid; gap: 10px; justify-items: start; }
@@ -265,8 +267,6 @@ textarea { resize: vertical; min-height: 84px; }
   .btn { min-height: 42px; }
   .btn.sm { min-height: 36px; padding: 7px 12px; }
   #q { flex-basis: 100%; }
-  #filter { flex: 1 1 0; }
-  #sort { flex: 1 1 0; }
   .chips:not(.wrap) { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
   .chips:not(.wrap)::-webkit-scrollbar { display: none; }
   .chip { white-space: nowrap; flex: none; padding: 8px 14px; }
@@ -309,15 +309,10 @@ textarea { resize: vertical; min-height: 84px; }
   <div id="toolbar" class="toolbar">
     <div class="line">
       <input id="q" type="search" placeholder="Rechercher un titre, un genre ou une note" aria-label="Rechercher">
-      <select id="filter" aria-label="Afficher"></select>
-      <select id="sort" aria-label="Trier par : récents, en retard, mieux notés, titre">
-        <option value="recent">Récents</option>
-        <option value="backlog">En retard</option>
-        <option value="rating">Mieux notés</option>
-        <option value="title">Titre A-Z</option>
-      </select>
+      <button id="btn-filter" class="btn" type="button" aria-expanded="false" aria-controls="filterpanel">Trier</button>
       <button id="btn-genres" class="btn" type="button" aria-expanded="false" aria-controls="genrepanel">Genres</button>
     </div>
+    <div class="genrepanel" id="filterpanel" hidden></div>
     <div class="genrepanel" id="genrepanel" hidden></div>
   </div>
 
@@ -376,7 +371,7 @@ textarea { resize: vertical; min-height: 84px; }
   var statusLabel = function (k) { var f = STATUS.find(function (s) { return s[0] === k; }); return f ? f[1] : 'En cours'; };
 
   var state = {
-    items: [], deleted: {}, rev: 0, auto: {}, autoAt: null, checkedAt: null, seen: {}, genreFilter: [], genresOpen: false, ready: false, error: null, mode: 'local', canWrite: true, dl: true,
+    items: [], deleted: {}, rev: 0, auto: {}, autoAt: null, checkedAt: null, seen: {}, genreFilter: [], genresOpen: false, filterOpen: false, ready: false, error: null, mode: 'local', canWrite: true, dl: true,
     tab: 'library', q: '', status: 'all', fav: false, fresh: false, sort: 'recent',
     sheet: null, draft: null, confirmDel: false, lastFocus: null
   };
@@ -733,16 +728,27 @@ textarea { resize: vertical; min-height: 84px; }
   }
 
   /* ---------- Bibliothèque ---------- */
+  var SORTS = [['recent', 'Récents'], ['backlog', 'Chapitres en retard'], ['rating', 'Mieux notés'], ['title', 'Titre (A-Z)']];
   function renderChips() {
     var counts = {}; state.items.forEach(function (m) { counts[m.status] = (counts[m.status] || 0) + 1; });
     var favN = state.items.filter(function (m) { return m.fav; }).length;
     var newN = state.items.filter(function (m) { return backlog(m) > 0; }).length;
     var cur = state.fresh ? 'fresh' : state.fav ? 'fav' : 'status:' + state.status;
-    var opt = function (v, label) { return '<option value="' + v + '"' + (cur === v ? ' selected' : '') + '>' + label + '</option>'; };
-    var html = opt('status:all', 'Tous (' + state.items.length + ')');
-    STATUS.forEach(function (s) { html += opt('status:' + s[0], s[1] + ' (' + (counts[s[0]] || 0) + ')'); });
-    html += opt('fav', 'Favoris (' + favN + ')') + opt('fresh', 'Nouveaux chapitres (' + newN + ')');
-    $('#filter').innerHTML = html;
+    var opts = [['status:all', 'Tous', state.items.length]];
+    STATUS.forEach(function (st) { opts.push(['status:' + st[0], st[1], counts[st[0]] || 0]); });
+    opts.push(['fav', 'Favoris', favN], ['fresh', 'Nouveaux chapitres', newN]);
+    var b = $('#btn-filter'), active = cur !== 'status:all', cl = opts.find(function (o) { return o[0] === cur; });
+    b.textContent = 'Trier' + (active && cl ? ' · ' + cl[1] : '');
+    b.classList.toggle('on', active);
+    b.setAttribute('aria-expanded', String(state.filterOpen));
+    var p = $('#filterpanel'); p.hidden = !state.filterOpen;
+    if (state.filterOpen) {
+      p.innerHTML = '<div class="fgroup"><span>Afficher</span><div class="chips wrap">' + opts.map(function (o) {
+        return '<button type="button" class="chip" data-f="' + o[0] + '" aria-pressed="' + (cur === o[0]) + '">' + esc(o[1]) + '<span class="n">' + o[2] + '</span></button>';
+      }).join('') + '</div></div><div class="fgroup"><span>Classer par</span><div class="chips wrap">' + SORTS.map(function (o) {
+        return '<button type="button" class="chip" data-s="' + o[0] + '" aria-pressed="' + (state.sort === o[0]) + '">' + esc(o[1]) + '</button>';
+      }).join('') + '</div></div>';
+    }
     renderGenrePanel();
   }
 
@@ -1280,14 +1286,19 @@ textarea { resize: vertical; min-height: 84px; }
   });
   $('#btn-add').addEventListener('click', function () { openSheet(null); });
 
-  $('#filter').addEventListener('change', function (e) {
-    var k = e.target.value;
-    state.fav = k === 'fav'; state.fresh = k === 'fresh';
-    state.status = k.indexOf('status:') === 0 ? k.split(':')[1] : 'all';
+  $('#btn-filter').addEventListener('click', function () { state.filterOpen = !state.filterOpen; if (state.filterOpen) state.genresOpen = false; renderChips(); });
+  $('#filterpanel').addEventListener('click', function (e) {
+    var c = e.target.closest('[data-f],[data-s]'); if (!c) return;
+    if (c.dataset.s) state.sort = c.dataset.s;
+    else {
+      var k = c.dataset.f;
+      state.fav = k === 'fav'; state.fresh = k === 'fresh';
+      state.status = k.indexOf('status:') === 0 ? k.split(':')[1] : 'all';
+    }
+    state.filterOpen = false;
     render();
   });
   $('#q').addEventListener('input', function (e) { state.q = e.target.value; renderLibrary(); });
-  $('#sort').addEventListener('change', function (e) { state.sort = e.target.value; renderLibrary(); });
   document.querySelector('.tabs').addEventListener('click', function (e) {
     var b = e.target.closest('.tab'); if (!b) return;
     state.tab = b.dataset.tab; render();
@@ -1345,7 +1356,7 @@ textarea { resize: vertical; min-height: 84px; }
       render(); window.scrollTo(0, 0);
     }
   });
-  $('#btn-genres').addEventListener('click', function () { state.genresOpen = !state.genresOpen; renderGenrePanel(); });
+  $('#btn-genres').addEventListener('click', function () { state.genresOpen = !state.genresOpen; if (state.genresOpen) state.filterOpen = false; renderChips(); });
   $('#genrepanel').addEventListener('click', function (e) {
     var c = e.target.closest('[data-g]'), x = e.target.closest('[data-gclear]');
     if (x) state.genreFilter = [];
