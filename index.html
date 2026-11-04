@@ -206,11 +206,12 @@ textarea { resize: vertical; min-height: 84px; }
 .newslist li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
 .newslist .nt { font-weight: 600; overflow-wrap: anywhere; }
 .news .row { gap: 8px; }
-.chlist { margin-top: 8px; }
-.chlist summary { cursor: pointer; font-size: 13px; color: var(--muted); padding: 6px 0; }
-.chlist-h { font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 190px; overflow-y: auto; }
-.chip-ch { font-family: var(--font-mono); font-size: 12.5px; padding: 6px 10px; min-width: 40px; text-align: center; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); text-decoration: none; }
+.chlist { margin-top: 8px; min-width: 0; max-width: 100%; }
+.chlist summary { cursor: pointer; font-size: 14px; color: var(--fg); padding: 10px 0; }
+.chlist-h { font-size: 12.5px; color: var(--muted); margin: 8px 0 6px; overflow-wrap: anywhere; }
+.chips { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; overscroll-behavior: contain; min-width: 0; }
+.chip-ch { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 500; }
+.chip-ch .go { font-size: 14px; opacity: .7; }
 .chip-ch.new { color: var(--fg); background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
 .chip-ch:hover, .chip-ch:focus-visible { background: var(--surface-2); }
 .detect { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); display: grid; gap: 2px; }
@@ -946,7 +947,7 @@ textarea { resize: vertical; min-height: 84px; }
       if (!list.length) return;
       var host = ''; try { host = new URL(s.url).hostname.replace(/^www\./, ''); } catch (e) { host = s.url; }
       blocks.push('<div class="chlist-h">' + esc(host) + '</div><div class="chips">' + list.slice().reverse().map(function (c) {
-        return '<a class="chip-ch' + (c[0] > r + 1e-9 ? ' new' : '') + '" href="' + esc(c[1]) + '" target="_blank" rel="noopener noreferrer" aria-label="Ouvrir le chapitre ' + esc(fmt(c[0])) + '">' + esc(fmt(c[0])) + '</a>';
+        return '<a class="chip-ch' + (c[0] > r + 1e-9 ? ' new' : '') + '" href="' + esc(c[1]) + '" target="_blank" rel="noopener noreferrer" aria-label="Ouvrir le chapitre ' + esc(fmt(c[0])) + '"><span>Chapitre ' + esc(fmt(c[0])) + (c[0] > r + 1e-9 ? ' · non lu' : '') + '</span><span class="go" aria-hidden="true">↗</span></a>';
       }).join('') + '</div>');
     });
     if (!blocks.length) return '';
