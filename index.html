@@ -234,8 +234,8 @@ textarea { resize: vertical; min-height: 84px; }
 .chlist-items { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; overscroll-behavior: contain; min-width: 0; }
 .chip-ch { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 500; }
 .chsite { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); margin: 4px 0 10px; }
-.chip-ch.off { opacity: .55; cursor: default; }
-.chip-ch .go { font-size: 14px; opacity: .7; }
+.chip-ch .via { font-size: 12px; color: var(--muted); font-weight: 400; margin-right: 4px; }
+.chip-ch .go { font-size: 14px; opacity: .85; }
 .chip-ch.new { color: var(--fg); background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
 .chip-ch:hover, .chip-ch:focus-visible { background: var(--surface-2); }
 .detect { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); display: grid; gap: 2px; }
@@ -1151,9 +1151,13 @@ textarea { resize: vertical; min-height: 84px; }
       }).join('') + '</select></label>';
     }
     var rows = list.map(function (n) {
-      var u = maps[sel.url][n], nw = n > r + 1e-9;
-      if (!u) return '<span class="chip-ch off"><span>Chapitre ' + esc(fmt(n)) + (nw ? ' · non lu' : '') + '</span><span class="hint">pas sur ce site</span></span>';
-      return '<a class="chip-ch' + (nw ? ' new' : '') + '" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer" aria-label="Ouvrir le chapitre ' + esc(fmt(n)) + '"><span>Chapitre ' + esc(fmt(n)) + (nw ? ' · non lu' : '') + '</span><span class="go" aria-hidden="true">↗</span></a>';
+      var u = maps[sel.url][n], nw = n > r + 1e-9, via = '';
+      if (!u) {
+        // Absent du site choisi : on ouvre le même chapitre sur un autre site qui l'a
+        var alt = srcs.find(function (s2) { return maps[s2.url][n]; });
+        u = alt && maps[alt.url][n]; via = alt ? hostLabel(alt.url) : '';
+      }
+      return '<a class="chip-ch' + (nw ? ' new' : '') + '" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer" aria-label="Ouvrir le chapitre ' + esc(fmt(n)) + (via ? ' sur ' + esc(via) : '') + '"><span>Chapitre ' + esc(fmt(n)) + (nw ? ' · non lu' : '') + '</span><span class="go">' + (via ? '<span class="via">sur ' + esc(via) + '</span> ' : '') + '<span aria-hidden="true">↗</span></span></a>';
     }).join('');
     return '<details class="chlist"' + (open ? ' open' : '') + '><summary>Chapitres disponibles (' + list.length + ')</summary>' + pick + '<div class="chlist-items">' + rows + '</div></details>';
   }
