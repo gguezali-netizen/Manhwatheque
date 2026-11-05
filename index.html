@@ -233,6 +233,8 @@ textarea { resize: vertical; min-height: 84px; }
 .chlist-h { font-size: 12.5px; color: var(--muted); margin: 8px 0 6px; overflow-wrap: anywhere; }
 .chlist-items { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; overscroll-behavior: contain; min-width: 0; }
 .chip-ch { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 500; }
+.chsite { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); margin: 4px 0 10px; }
+.chip-ch.off { opacity: .55; cursor: default; }
 .chip-ch .go { font-size: 14px; opacity: .7; }
 .chip-ch.new { color: var(--fg); background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
 .chip-ch:hover, .chip-ch:focus-visible { background: var(--surface-2); }
@@ -414,6 +416,10 @@ textarea { resize: vertical; min-height: 84px; }
   var statusLabel = function (k) { var f = STATUS.find(function (s) { return s[0] === k; }); return f ? f[1] : 'En cours'; };
 
   /* Mode adulte : n'existe que pour la session en cours, sur cet appareil (il n'est jamais synchronisé). */
+  /* Site préféré par série pour ouvrir les chapitres (réglage propre à cet appareil) */
+  var PREF_KEY = 'manhwatheque.sitepref', sitePref = {};
+  try { sitePref = JSON.parse(localStorage.getItem(PREF_KEY) || '{}') || {}; } catch (e) { sitePref = {}; }
+  function savePref() { try { localStorage.setItem(PREF_KEY, JSON.stringify(sitePref)); } catch (e) { /* ignoré */ } }
   var MODE_KEY = 'manhwatheque.mode';
   function readMode() { try { return sessionStorage.getItem(MODE_KEY) === '1'; } catch (e) { return false; } }
   var state = {
@@ -454,6 +460,10 @@ textarea { resize: vertical; min-height: 84px; }
   }
   /* Lien du bouton « Lire » : chapitre suivant celui lu ; sinon le dernier lu ; sinon la page de la série. */
   function readLink(m, srcUrl) {
+    if (!srcUrl && sitePref[m.id] && chaptersOf(m, sitePref[m.id]).length) {
+      var pl = readLink(m, sitePref[m.id]);
+      if (pl.ch != null) return pl;
+    }
     var list = chaptersOf(m, srcUrl), r = m.chapter == null ? 0 : m.chapter, i;
     for (i = 0; i < list.length; i++) if (list[i][0] > r + 1e-9) return { url: list[i][1], ch: list[i][0] };
     for (i = list.length - 1; i >= 0; i--) if (Math.abs(list[i][0] - r) < 1e-9) return { url: list[i][1], ch: list[i][0] };
@@ -1120,21 +1130,32 @@ textarea { resize: vertical; min-height: 84px; }
       (swap ? ' <button type="button" class="btn sm ghost" data-act="cover-auto">Remplacer l’image par celle du robot</button>' : '') +
       '<p class="hint" style="margin-top:6px">Le premier bouton remplit seulement ce qui est vide. Le second remplace l’image actuelle.</p></div>';
   }
-  function chaptersHtml(d) {
+  function hostLabel(url) { try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return url; } }
+  /* Une seule liste de chapitres pour toute la série. S'il y a plusieurs sites, un menu choisit celui vers lequel les chapitres s'ouvrent. */
+  function chaptersHtml(d, open) {
     var a = state.auto[d.id];
     if (!a || !a.sources) return '';
-    var r = d.chapter == null ? 0 : d.chapter, blocks = [];
-    a.sources.forEach(function (s) {
-      var list = chaptersOf(d, s.url);
-      if (!list.length) return;
-      var host = ''; try { host = new URL(s.url).hostname.replace(/^www\./, ''); } catch (e) { host = s.url; }
-      blocks.push('<div class="chlist-h">' + esc(host) + '</div><div class="chlist-items">' + list.slice().reverse().map(function (c) {
-        return '<a class="chip-ch' + (c[0] > r + 1e-9 ? ' new' : '') + '" href="' + esc(c[1]) + '" target="_blank" rel="noopener noreferrer" aria-label="Ouvrir le chapitre ' + esc(fmt(c[0])) + '"><span>Chapitre ' + esc(fmt(c[0])) + (c[0] > r + 1e-9 ? ' · non lu' : '') + '</span><span class="go" aria-hidden="true">↗</span></a>';
-      }).join('') + '</div>');
-    });
-    if (!blocks.length) return '';
-    var total = a.sources.reduce(function (n, s) { return n + chaptersOf(d, s.url).length; }, 0);
-    return '<details class="chlist"><summary>Chapitres disponibles (' + total + ')</summary>' + blocks.join('') + '</details>';
+    var srcs = a.sources.filter(function (s) { return chaptersOf(d, s.url).length; });
+    if (!srcs.length) return '';
+    var sel = srcs.find(function (s) { return s.url === sitePref[d.id]; }) || srcs[0];
+    var maps = {}, nums = {};
+    srcs.forEach(function (s) { maps[s.url] = {}; chaptersOf(d, s.url).forEach(function (c) { maps[s.url][c[0]] = c[1]; nums[c[0]] = 1; }); });
+    var list = Object.keys(nums).map(Number).sort(function (x, y) { return y - x; });
+    var r = d.chapter == null ? 0 : d.chapter;
+    var pick = '';
+    if (srcs.length > 1) {
+      var seen = {};
+      pick = '<label class="chsite">Ouvrir sur<select data-f="ch-site" aria-label="Site vers lequel ouvrir les chapitres">' + srcs.map(function (s) {
+        var h = hostLabel(s.url); seen[h] = (seen[h] || 0) + 1;
+        return '<option value="' + esc(s.url) + '"' + (s === sel ? ' selected' : '') + '>' + esc(h + (seen[h] > 1 ? ' (' + seen[h] + ')' : '')) + ' · ' + chaptersOf(d, s.url).length + ' ch.</option>';
+      }).join('') + '</select></label>';
+    }
+    var rows = list.map(function (n) {
+      var u = maps[sel.url][n], nw = n > r + 1e-9;
+      if (!u) return '<span class="chip-ch off"><span>Chapitre ' + esc(fmt(n)) + (nw ? ' · non lu' : '') + '</span><span class="hint">pas sur ce site</span></span>';
+      return '<a class="chip-ch' + (nw ? ' new' : '') + '" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer" aria-label="Ouvrir le chapitre ' + esc(fmt(n)) + '"><span>Chapitre ' + esc(fmt(n)) + (nw ? ' · non lu' : '') + '</span><span class="go" aria-hidden="true">↗</span></a>';
+    }).join('');
+    return '<details class="chlist"' + (open ? ' open' : '') + '><summary>Chapitres disponibles (' + list.length + ')</summary>' + pick + '<div class="chlist-items">' + rows + '</div></details>';
   }
   function detectHtml(d) {
     var a = state.auto[d.id];
@@ -1448,6 +1469,12 @@ textarea { resize: vertical; min-height: 84px; }
     else if (f === 'rating') d.rating = +t.value;
     else if (f === 'fav') d.fav = t.checked;
     else if (f === 'adult') d.adult = t.checked;
+    else if (f === 'ch-site') {
+      sitePref[d.id] = t.value; savePref();
+      var cl = document.querySelector('.chlist');
+      if (cl) { var tmp = document.createElement('div'); tmp.innerHTML = chaptersHtml(d, cl.open); cl.replaceWith(tmp.firstChild); var ns = document.querySelector('[data-f="ch-site"]'); if (ns) ns.focus(); }
+      render();
+    }
     else if (f === 'notes') d.notes = t.value;
     else if (f === 'genre-input') onGenreInput(t);
     else if (f === 'site-name') d.sites[+t.closest('.site-row').dataset.i].name = t.value;
