@@ -439,7 +439,10 @@ textarea { resize: vertical; min-height: 84px; }
     if (m.status === 'done' || m.status === 'dropped') return 0;
     var L = effLatest(m);
     if (L == null || m.chapter == null) return 0;
-    return Math.max(0, Math.floor(L - m.chapter + 1e-9));
+    // Avec la liste des chapitres connus, on compte ceux qui restent à lire (150.1 et 150.5 comptent comme des chapitres).
+    var list = chaptersOf(m);
+    if (list.length && list[list.length - 1][0] >= L - 1e-9) return list.filter(function (c) { return c[0] > m.chapter + 1e-9; }).length;
+    return Math.max(0, Math.ceil(L - m.chapter - 1e-9));
   }
   function lastRead(m) {
     var h = m.history;
@@ -1114,7 +1117,7 @@ textarea { resize: vertical; min-height: 84px; }
     el.hidden = false;
     el.innerHTML = '<b>' + (news.length === 1 ? 'Nouveau chapitre' : news.length + ' séries ont de nouveaux chapitres') + '</b>' +
       '<ul class="newslist">' + news.map(function (n) {
-        var more = Math.floor(n.to - n.from + 1e-9);
+        var more = Math.max(1, Math.ceil(n.to - n.from - 1e-9));
         return '<li><span class="nt">' + esc(n.m.title) + '</span><span class="mono">ch. ' + esc(fmt(n.to)) + (more > 1 ? ' (+' + more + ')' : '') + '</span>' +
           (readBtn(readLink(n.m), n.m.title) || '<span></span>') + '</li>';
       }).join('') + '</ul>' +
