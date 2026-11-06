@@ -986,6 +986,7 @@ textarea { resize: vertical; min-height: 84px; }
   }
 
   /* ---------- Historique ---------- */
+  var histOpen = {};
   function renderHistory() {
     var rows = [];
     vis().forEach(function (m) {
@@ -998,10 +999,27 @@ textarea { resize: vertical; min-height: 84px; }
       view.innerHTML = '<div class="empty big"><h2>Pas encore de lecture enregistrée</h2><p>Chaque fois que tu utilises « +1 ch. » ou que tu changes ton chapitre dans une fiche, la lecture apparaît ici, jour par jour.</p></div>';
       return;
     }
-    var html = '', last = '';
+    var html = '', last = '', cur = null, sod = new Date(); sod.setHours(0, 0, 0, 0);
+    var GROUPS = [['hier', 'Hier'], ['sem', '7 derniers jours'], ['mois', '30 derniers jours'], ['old', 'Plus ancien']];
+    function groupOf(t) {
+      var d = new Date(t); d.setHours(0, 0, 0, 0);
+      var n = Math.round((sod - d) / 864e5);
+      return n <= 0 ? 'today' : n === 1 ? 'hier' : n <= 7 ? 'sem' : n <= 30 ? 'mois' : 'old';
+    }
+    var counts = {};
+    rows.forEach(function (r) { r.g = groupOf(r.t); counts[r.g] = (counts[r.g] || 0) + 1; });
+    function closeGroup() { if (cur && cur !== 'today') html += '</details>'; }
     rows.forEach(function (r) {
-      var d = dayLabel(r.t);
-      if (d !== last) { html += '<h2 class="day">' + esc(d) + '</h2>'; last = d; }
+      if (r.g !== cur) {
+        closeGroup(); cur = r.g; last = '';
+        if (cur !== 'today') {
+          var gl = GROUPS.filter(function (g) { return g[0] === cur; })[0][1], n = counts[cur];
+          html += '<details class="site hgrp" data-k="' + cur + '"' + (histOpen[cur] ? ' open' : '') + '><summary><span class="sname" style="border:0">' + esc(gl) + '</span><span class="mono">' + n + ' lecture' + (n > 1 ? 's' : '') + '</span>' +
+            '<span class="chev" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5 5 5-5"/></svg></span></summary>';
+        }
+      }
+      var d = cur === 'today' ? 'Aujourd’hui' : dayLabel(r.t);
+      if (d !== last) { html += (cur === 'hier' ? '' : '<h2 class="day">' + esc(d) + '</h2>'); last = d; }
       html += '<div class="hwrap" data-id="' + esc(r.m.id) + '" data-t="' + esc(r.t) + '" data-c="' + esc(r.c) + '">' +
         '<button type="button" class="hrow" data-act="open">' +
         '<span class="mini">' + coverHtml(r.m) + '</span>' +
@@ -1010,8 +1028,12 @@ textarea { resize: vertical; min-height: 84px; }
         (state.canWrite ? '<button type="button" class="hdel" data-act="hdel" aria-label="Supprimer cette lecture de l’historique : ' + esc(r.m.title) + ', chapitre ' + esc(fmt(r.c)) + '" title="Supprimer de l’historique">✕</button>' : '') +
         '</div>';
     });
+    closeGroup();
     if (state.canWrite) html += '<div class="hclear"><button type="button" class="btn sm ghost danger" data-act="hclear">' + (state.confirmClear ? 'Confirmer : tout effacer' : 'Vider tout l’historique') + '</button></div>';
     view.innerHTML = html;
+    view.querySelectorAll('details.hgrp').forEach(function (d) {
+      d.addEventListener('toggle', function () { histOpen[d.getAttribute('data-k')] = d.open; });
+    });
   }
 
   /* ---------- Sites ---------- */
