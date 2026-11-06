@@ -209,6 +209,17 @@ textarea { resize: vertical; min-height: 84px; }
 .btn.on { background: var(--accent-soft); border-color: var(--accent); }
 .genrepanel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: grid; gap: 10px; }
 .genrepanel .chips { flex-wrap: wrap; }
+.checkpanel { margin-bottom: 12px; }
+.checkpanel h2 { font-family: var(--font-display); font-size: 17px; margin: 0; }
+.checkpanel .cklist { max-height: 42vh; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg, transparent); }
+.checkpanel .ckrow { display: flex; gap: 10px; align-items: center; padding: 8px 12px; min-height: 44px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.checkpanel .ckrow:last-child { border-bottom: 0; }
+.checkpanel .ckrow input { width: 20px; height: 20px; flex: none; }
+.checkpanel .ckrow .ckt { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.checkpanel .ckrow .mono { font-size: 12px; color: var(--muted); flex: none; }
+.checkpanel .ckbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.checkpanel .ckbar .grow { flex: 1; }
+.checkpanel .ckopt { display: flex; gap: 8px; align-items: center; font-size: 14px; }
 .fgroup { display: grid; gap: 6px; }
 .fgroup + .fgroup { margin-top: 4px; }
 .fgroup > span { font-size: 12.5px; color: var(--muted); font-weight: 600; }
@@ -324,6 +335,7 @@ textarea { resize: vertical; min-height: 84px; }
   </header>
 
   <div id="banner" class="banner" hidden></div>
+  <section class="genrepanel checkpanel" id="checkpanel" aria-label="Choisir les séries à vérifier" hidden></section>
   <section id="news" class="news" aria-live="polite" hidden></section>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
@@ -762,7 +774,7 @@ textarea { resize: vertical; min-height: 84px; }
     return fetch(API + path, { method: opts.method || 'GET', headers: h, body: opts.body, cache: 'no-store' });
   }
   function setRobotBusy(b) { robot.busy = b; var el = $('#btn-check'); if (el) el.classList.toggle('work', b); }
-  async function runRobot() {
+  async function runRobot(ids, rapport) {
     if (robot.busy) { toast('Une vérification est déjà en cours.'); return; }
     var repo = robotRepo();
     if (!robot.token || !repo) { openSettings(); var ti = $('#robot-token'); if (ti) ti.focus(); toast('Ajoute d’abord le jeton de vérification.'); return; }
@@ -774,7 +786,7 @@ textarea { resize: vertical; min-height: 84px; }
         var r0 = await ghr(base + '/runs?event=workflow_dispatch&per_page=1');
         if (r0.ok) { var j0 = await r0.json(); before = (j0.workflow_runs && j0.workflow_runs[0] && j0.workflow_runs[0].id) || 0; }
       } catch (e) { /* le suivi sera simplement moins précis */ }
-      var r = await ghr(base + '/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main', inputs: { rapport: 'false' } }) });
+      var r = await ghr(base + '/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main', inputs: { rapport: rapport ? 'true' : 'false', series: (ids || []).join(',') } }) });
       if (!r.ok) {
         toast(r.status === 401 ? 'GitHub refuse le jeton (incorrect ou expiré).'
           : r.status === 403 ? 'Le jeton n’a pas le droit « Actions : lecture et écriture » sur ce dépôt.'
@@ -801,6 +813,67 @@ textarea { resize: vertical; min-height: 84px; }
       toast('Impossible de joindre GitHub. Réessaie dans un instant.');
     } finally { setRobotBusy(false); }
   }
+  /* ---------- Choisir les séries à vérifier ---------- */
+  var check = { open: false, sel: {}, q: '', report: true };
+  function checkable() {
+    return vis().filter(function (m) { return (m.sites || []).some(function (x) { return /^https?:\/\//i.test((x && x.url) || ''); }); })
+      .sort(function (a, b) { return String(a.title).localeCompare(String(b.title), 'fr'); });
+  }
+  function checkShown() {
+    var q = norm(check.q);
+    return checkable().filter(function (m) { return !q || norm(m.title).indexOf(q) >= 0; });
+  }
+  function checkCount() { return Object.keys(check.sel).filter(function (k) { return check.sel[k] && byId(k); }).length; }
+  function renderCheckList() {
+    var l = $('#cklist'); if (!l) return;
+    var rows = checkShown();
+    l.innerHTML = rows.length ? rows.map(function (m) {
+      var hosts = (m.sites || []).filter(function (x) { return /^https?:\/\//i.test((x && x.url) || ''); }).map(function (x) { return hostLabel(x.url); }).filter(function (h, i, a) { return a.indexOf(h) === i; }).join(', ');
+      return '<label class="ckrow"><input type="checkbox" data-ck="' + esc(m.id) + '"' + (check.sel[m.id] ? ' checked' : '') + '><span class="ckt">' + esc(m.title) + '</span><span class="mono">' + esc(hosts) + '</span></label>';
+    }).join('') : '<p class="note" style="padding:12px;margin:0">Aucune série avec un lien de site.</p>';
+    var n = checkCount(), go = $('#ck-go');
+    if (go) { go.textContent = n ? 'Vérifier ' + n + ' série' + (n > 1 ? 's' : '') : 'Choisis au moins une série'; go.disabled = !n; }
+  }
+  function renderCheck() {
+    var p = $('#checkpanel'); p.hidden = !check.open;
+    var b = $('#btn-check'); if (b) b.setAttribute('aria-expanded', String(check.open));
+    if (!check.open) return;
+    p.innerHTML = '<h2>Quelles séries vérifier ?</h2>' +
+      '<input id="ck-q" type="search" placeholder="Chercher une série" aria-label="Chercher une série" value="' + esc(check.q) + '">' +
+      '<div class="cklist" id="cklist"></div>' +
+      '<div class="ckbar"><button type="button" class="btn sm ghost" data-ck-act="all">Tout cocher</button><button type="button" class="btn sm ghost" data-ck-act="none">Aucune</button>' +
+      '<label class="ckopt grow"><input type="checkbox" id="ck-rep"' + (check.report ? ' checked' : '') + '> Détail dans un rapport</label></div>' +
+      '<div class="ckbar"><button type="button" class="btn primary grow" id="ck-go" data-ck-act="go" disabled>Choisis au moins une série</button><button type="button" class="btn ghost" data-ck-act="close">Fermer</button></div>';
+    renderCheckList();
+  }
+  function toggleCheck() {
+    if (robot.busy) { toast('Une vérification est déjà en cours.'); return; }
+    var repo = robotRepo();
+    if (!robot.token || !repo) { openSettings(); var ti = $('#robot-token'); if (ti) ti.focus(); toast('Ajoute d’abord le jeton de vérification.'); return; }
+    check.open = !check.open; renderCheck();
+  }
+  $('#checkpanel').addEventListener('input', function (e) {
+    if (e.target.id === 'ck-q') { check.q = e.target.value; renderCheckList(); }
+  });
+  $('#checkpanel').addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.getAttribute && t.getAttribute('data-ck')) { check.sel[t.getAttribute('data-ck')] = t.checked; renderCheckList(); return; }
+    if (t.id === 'ck-rep') check.report = t.checked;
+  });
+  $('#checkpanel').addEventListener('click', function (e) {
+    var a = e.target.closest('[data-ck-act]'); if (!a) return;
+    var act = a.getAttribute('data-ck-act');
+    if (act === 'all') { checkShown().forEach(function (m) { check.sel[m.id] = true; }); renderCheck(); }
+    else if (act === 'none') { check.sel = {}; renderCheck(); }
+    else if (act === 'close') { check.open = false; renderCheck(); }
+    else if (act === 'go') {
+      var ids = checkable().map(function (m) { return m.id; }).filter(function (id) { return check.sel[id]; });
+      if (!ids.length) return;
+      var all = ids.length === checkable().length && ids.length === state.items.filter(function (m) { return (m.sites || []).length; }).length;
+      check.open = false; renderCheck();
+      runRobot(all ? [] : ids, check.report);
+    }
+  });
   async function runSync() {
     if (!sync.token) return;
     if (sync.busy) { sync.again = true; return; }
@@ -1704,7 +1777,7 @@ textarea { resize: vertical; min-height: 84px; }
     else if (e.target.closest('[data-go="sync"]')) { closeSettings(); state.tab = 'sync'; render(); window.scrollTo(0, 0); }
   });
   $('#btn-reload').addEventListener('click', function () { location.reload(); });
-  $('#btn-check').addEventListener('click', runRobot);
+  $('#btn-check').addEventListener('click', toggleCheck);
   $('#robot-save').addEventListener('click', function () {
     var t = $('#robot-token').value.trim(), repo = $('#robot-repo').value.trim();
     if (repo && !/^[\w.-]+\/[\w.-]+$/.test(repo)) { toast('Le dépôt doit ressembler à ton-pseudo/manhwatheque-alertes.'); return; }
